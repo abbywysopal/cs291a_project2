@@ -1,7 +1,7 @@
 require 'sinatra'
 
 get '/' do
-  "Hello World\n"
+  "Hello World!!\n"
 end
 
 post '/' do
