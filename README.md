@@ -94,6 +94,10 @@ docker run -it --rm \
 curl -D- localhost:3000/
 ```
 
+```sh
+curl -D- -X POST localhost:3000/
+```
+
 The default application should provide output that looks like the following:
 
 ```http
