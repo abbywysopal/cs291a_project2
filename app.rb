@@ -30,19 +30,19 @@ post '/files/' do
   PP.pp request
   
   filename = params['file']['filename']
-  # "#{params['file']['filename']}\n"
+  "#{filename}"
 
-  if filename == nil
-    # halt 422
-    "422"
-  else
-    # "{uploaded: #{sha256.hexdigest}}"
-    File.read(filename, "r")
-    sha256 = Digest::SHA256.new
-    sha256 = Digest::SHA256.file filename
-    all_files << sha256.hexdigest
-    "uploaded\n"
-  end
+  # if filename == nil
+  #   # halt 422
+  #   "422"
+  # else
+  #   # "{uploaded: #{sha256.hexdigest}}"
+  #   # File.read(filename, "r")
+  #   sha256 = Digest::SHA256.new
+  #   sha256 = Digest::SHA256.file filename
+  #   all_files << sha256.hexdigest
+  #   "uploaded: #{sha256.hexdigest}\n"
+  # end
 
 end
 
