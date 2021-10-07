@@ -15,11 +15,36 @@ get '/files/' do
   files = bucket.files
   list = []
   files.all do |file|
-    if(file.name[2] == "/" && file.name[5] == "/" && file.name.length() == 66)
-      name = file.name[0,2] + file.name[3,2] + file.name[6,64 - 4]
-      list.push(name)
+    if(file.name[2] != "/" || file.name[5] != "/" || file.name.length() != 66)
+
     else
 
+      name = file.name[0,2] + file.name[3,2] + file.name[6,64 - 4]
+
+      hex = true
+      # name.chars.each do |digit|
+      #   hex = false unless digit.match(/^[0-9a-f]+$/i)
+      # end
+
+      name.each_byte do |c|
+        if (c > 96 && c < 123) || (c > 47 && c < 58)
+
+        else
+          hex = false
+        end
+      end
+      # for letter in file.name
+      #   if letter == /^[0-9a-f]+$/i
+      #     check = 0
+      #   else
+      #     check = 0
+      #   end
+
+      if hex == true
+        list.push(name)
+      else 
+
+      end 
     end
   end
 
@@ -93,9 +118,13 @@ post '/files/' do
   if filename == nil
     response.status = 422
   else
-    file = File.open(filename)
+    begin
+      file = File.open(filename)
+    rescue Exception, Errno::ENOENT
+      response.status = 422
+    end 
 
-    if File.size(filename) >= 1024 * 1024 * 1024
+    if File.size(filename) >= 1024 * 1024 * 1024 || response.status == 422
       response.status = 422
     else
 
@@ -127,7 +156,8 @@ post '/files/' do
       end
 
     end
-  end 
+
+  end
 
 end
 
@@ -137,7 +167,7 @@ delete '/files/*' do
 
   filename = params['splat'][0].downcase
   "#{filename}\n"
-
+  
   if(filename.length() == 64)
     path = filename[0,2] + "/" + filename[2,2] + "/" + filename[4, 64 - 4]
 
