@@ -22,23 +22,14 @@ get '/files/' do
       name = file.name[0,2] + file.name[3,2] + file.name[6,64 - 4]
 
       hex = true
-      # name.chars.each do |digit|
-      #   hex = false unless digit.match(/^[0-9a-f]+$/i)
-      # end
 
       name.each_byte do |c|
-        if (c > 96 && c < 123) || (c > 47 && c < 58)
+        if (c > 96 && c < 103) || (c > 47 && c < 58)
 
         else
           hex = false
         end
       end
-      # for letter in file.name
-      #   if letter == /^[0-9a-f]+$/i
-      #     check = 0
-      #   else
-      #     check = 0
-      #   end
 
       if hex == true
         list.push(name)
@@ -65,7 +56,17 @@ get '/files/*' do
   filename = params['splat'][0].downcase
   "#{filename}\n"
 
-  if(filename.length() == 64)
+  hex = true
+
+  filename.each_byte do |c|
+    if (c > 96 && c < 103) || (c > 47 && c < 58)
+
+    else
+      hex = false
+    end
+  end
+
+  if(filename.length() == 64 && hex == true)
     response.status = 404
     path = filename[0,2] + "/" + filename[2,2] + "/" + filename[4, 64 - 4]
 
@@ -120,7 +121,7 @@ post '/files/' do
   else
     begin
       file = File.open(filename)
-    rescue Exception, Errno::ENOENT
+    rescue 
       response.status = 422
     end 
 
@@ -167,8 +168,18 @@ delete '/files/*' do
 
   filename = params['splat'][0].downcase
   "#{filename}\n"
+
+  hex = true
+
+  filename.each_byte do |c|
+    if (c > 96 && c < 103) || (c > 47 && c < 58)
+
+    else
+      hex = false
+    end
+  end
   
-  if(filename.length() == 64)
+  if(filename.length() == 64 && hex == true)
     path = filename[0,2] + "/" + filename[2,2] + "/" + filename[4, 64 - 4]
 
     require 'google/cloud/storage'
