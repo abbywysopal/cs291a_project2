@@ -76,15 +76,15 @@ get '/files/*' do
 
     files = bucket.files
     list = []
-    file_content = ""
+    file_content = []
+    downloaded = nil
     files.all do |f|
       if(f.name.eql?(path))
         response.status = 200
         downloaded = f.download
         downloaded.rewind
-        file_content = downloaded.read 
-        # response.content = File.ftype(f.name)
-        # downloaded.content
+        file_content.push(downloaded.read)
+        response['Content-Type'] = f.content_type
       else
   
       end
@@ -93,7 +93,7 @@ get '/files/*' do
     if response.status != 200
       response.status = 404
     else
-      "#{file_content}\n"
+      "#{file_content[0]}"
     end
 
     
@@ -110,54 +110,64 @@ end
   # the provided file is more than 1MB in size
 
 post '/files/' do 
+
   require 'pp'
   PP.pp request
   PP.pp response
   
-  filename = params['file']['tempfile']
+  file_param = params['file']
 
-  if filename == nil
+  if file_param == nil
     response.status = 422
   else
-    begin
-      file = File.open(filename)
-    rescue 
-      response.status = 422
-    end 
+    filename = params['file']['tempfile']
 
-    if File.size(filename) >= 1024 * 1024 * 1024 || response.status == 422
+    if filename == nil 
       response.status = 422
     else
+      # begin
+      if File.file?(filename)
+        file = File.open(filename)
 
-      sha256 = Digest::SHA256.new
-      sha256 = Digest::SHA256.file file
-      path = sha256.hexdigest[0,2] + "/" + sha256.hexdigest[2,2] + "/" + sha256.hexdigest[4, 64 - 4]
-
-      require 'google/cloud/storage'
-      storage = Google::Cloud::Storage.new(project_id: 'cs291a')
-      bucket = storage.bucket 'cs291project2', skip_lookup: true
-
-      files = bucket.files
-      list = []
-      files.all do |f|
-        if(f.name.eql?(path))
-          response.status = 409
+        if File.size(filename) > (1024**2)
+          response.status = 422
         else
-    
+
+          sha256 = Digest::SHA256.new
+          sha256 = Digest::SHA256.file file
+          path = sha256.hexdigest[0,2] + "/" + sha256.hexdigest[2,2] + "/" + sha256.hexdigest[4, 64 - 4]
+
+          require 'google/cloud/storage'
+          storage = Google::Cloud::Storage.new(project_id: 'cs291a')
+          bucket = storage.bucket 'cs291project2', skip_lookup: true
+
+          files = bucket.files
+          list = []
+          files.all do |f|
+            if(f.name.eql?(path))
+              response.status = 409
+            else
+        
+            end
+          end
+
+          if response.status == 409
+            "ALREADY UPLOADED\n\n"
+          else
+            google_file = bucket.create_file file, path
+            google_file.content_type = params['file']['type']
+
+            response.status = 201
+            response['Content-Type'] = params['file']['type']
+            "{\"uploaded\": \"#{sha256.hexdigest}\"}"
+          end
         end
-      end
 
-      if response.status == 409
-        "ALREADY UPLOADED\n\n"
+      # rescue
       else
-        bucket.create_file file, path
-        response.status = 201
-        "{\"uploaded\": \"#{sha256.hexdigest}\"}\n"
-
+        response.status = 422
       end
-
     end
-
   end
 
 end
